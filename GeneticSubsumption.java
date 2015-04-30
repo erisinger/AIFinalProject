@@ -1,13 +1,12 @@
 import java.util.*;
 class GeneticSubsumption {
-	//weights
+	
+	//weight indices
 	private final int WANDER = 0;
-	private final int REST_AT_1 = 1;
-	private final int REST_AT_5 = 2;
-	private final int REST_AT_10 = 3;
-	private final int REST = 4;
-	private final int FIND_FOOD = 5;
-	private final int SENSE_OF_SMELL = 6;
+	private final int DIRECTED_SEARCH = 1;
+	private final int REST = 2;
+	private final int SENSE_OF_SMELL = 3;
+	private final int MOVE_TOWARD_FOOD = 4;
 	
 	
 	private ArrayList<GSAgents> agents;
@@ -20,7 +19,8 @@ class GeneticSubsumption {
 			agents.add(new GSAgent());
 		}
 		
-		//assign agents to nodes
+		//TO DO: assign agents to nodes
+		
 	}
 	
 	public void run(int c){
@@ -31,7 +31,7 @@ class GeneticSubsumption {
 		//run for CYCLES generations
 		for (int i = 0; i < CYCLES; i++) {
 			
-			//run until all agents are dead, then cross the most successful
+			//run until almost all agents are dead, then cross the survivors
 			while (agentsRemaining() > PROGENITORS) {
 				
 				//for each node in the grid, check the node for agents
@@ -57,8 +57,7 @@ class GeneticSubsumption {
 					agents.add(c);
 				}
 			}
-			
-			//start again...		
+			//start again...
 		}
 	}
 	
@@ -82,6 +81,12 @@ class GeneticSubsumption {
 		
 		//current location
 		GSEnvironmentNode node;
+		
+		private int consecutiveSearchUnits = 0;
+		private int searchX = 0;
+		private int searchY = 0;
+		
+		private int cyclesSinceEating = 0;
 		
 		//constructor for pre-made chromosome
 		public GSAgent(ArrayList<GSAGene> g){
