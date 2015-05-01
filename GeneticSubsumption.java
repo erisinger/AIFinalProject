@@ -9,27 +9,32 @@ class GeneticSubsumption {
 	private final int MOVE_TOWARD_FOOD = 4;
 	
 	
-	private ArrayList<GSAgents> agents;
+	private ArrayList<GSAgent> agents;
 	private GSEnvironmentNode[][] grid;
 	
 	public GeneticSubsumption(GSEnvironmentNode[][] g, int numAgents){
+		int count = numAgents;
 		agents = new ArrayList<GSAgent>();
 		grid = g;
-		for (i = 0; i < numAgents; i++) {
-			agents.add(new GSAgent());
+		
+		for (int i = 0; i < grid.length && count > 0; i++) {
+			for (int j = 0; j < grid[0].length && count > 0; j++) {
+				agents.add(new GSAgent(8));
+			}
+			
 		}
 		
 		//TO DO: assign agents to nodes
 		
 	}
 	
-	public void run(int c){
+	public void run(int cyc){
 		
-		int CYCLES = c;
+		int CYCLES = cyc;
 		int PROGENITORS = 10;
 		
 		//run for CYCLES generations
-		for (int i = 0; i < CYCLES; i++) {
+		for (int k = 0; k < CYCLES; k++) {
 			
 			//run until almost all agents are dead, then cross the survivors
 			while (agentsRemaining() > PROGENITORS) {
@@ -48,7 +53,7 @@ class GeneticSubsumption {
 							grid[a.node.i][a.node.j].agents.add(a);
 						}
 					}
-				}			
+				}
 			}
 			
 			//cross agents -- REPLACE WITH BETTER SELECTION ALGORITHM
@@ -100,6 +105,11 @@ class GeneticSubsumption {
 			}
 		}
 		
+		//constructor for empty agent
+		public GSAgent(){
+			
+		}
+		
 		public void act(GSEnvironmentNode n){
 			node = n;
 			
@@ -114,12 +124,12 @@ class GeneticSubsumption {
 			
 			for (int i = 0; i < genes.size(); i++) {
 				if (Math.random() > 0.5) {
-					c1.genes.add(genes.get(i);
-					c2.genese.add(a.genes.get(i);
+					c1.genes.add(genes.get(i));
+					c2.genes.add(a.genes.get(i));
 				}
 				else {
-					c2.genes.add(genes.get(i);
-					c1.genese.add(a.genes.get(i);
+					c2.genes.add(genes.get(i));
+					c1.genes.add(a.genes.get(i));
 				}
 			}
 			
@@ -134,7 +144,15 @@ class GeneticSubsumption {
 			for (GSAGene g : genes) {
 				g.randomize();
 			}
-		}		
+		}	
+		
+		public String toString(){
+			String str = "health: " + health + "\n";
+			for (GSAGene g : genes) {
+				str += g.name + ": " + g.weight + "\n";
+			}	
+			return str;
+		}	
 		
 	}
 	
@@ -154,11 +172,11 @@ class GeneticSubsumption {
 		}
 		
 		public void randomize(){
-			weight = Math.random() * 10;
+			weight = (int)Math.random() * 10;
 		}
 	}
 	
-	public class GSEnvironmentNode{
+	public static class GSEnvironmentNode{
 		public boolean hasFood = false;
 		public ArrayList<GSAgent> agents = new ArrayList<GSAgent>();
 		public int i;
