@@ -5,18 +5,26 @@ class GeneticSubsumption {
 	private GSEnvironmentNode[][] grid;
 	
 	public GeneticSubsumption(GSEnvironmentNode[][] g, int numAgents){
-		int count = numAgents;
+		
 		agents = new ArrayList<GSAgent>();
 		grid = g;
 		
-		for (int i = 0; i < grid.length && count > 0; i++) {
-			for (int j = 0; j < grid[0].length && count > 0; j++) {
-				agents.add(new GSAgent(8));
-			}
-		}
+		int count = numAgents;
+		while (count > 0) {
+			agents.add(new GSAgent(8));
+			count--;
+		}				
 		
-		//TO DO: assign agents to nodes
-		
+		assignAgentsToNodes();
+	}
+	
+	private void assignAgentsToNodes(){
+		int tempI, tempJ;
+		for (GSAgent a : agents) {
+			tempI = (int)(Math.random() * (double)grid.length);
+			tempJ = (int)(Math.random() * (double)grid[0].length);
+			grid[tempI][tempJ].agents.add(a);
+		}	
 	}
 	
 	public void run(int cyc){
@@ -27,33 +35,56 @@ class GeneticSubsumption {
 		
 		//run for CYCLES generations
 		for (int k = 0; k < CYCLES; k++) {
-//			System.out.println("cycle " + k);
-			System.out.println(toString());
+			System.out.println("\ncycle " + k);
 			
-			//run until almost all agents are dead, then cross the most successful (longevity-wise)
+			//reset game
+			for (GSAgent a : agents) {
+				a.resetStats();
+			}
+			assignAgentsToNodes();
+//			System.out.println(toString());
+			
+			//run until all agents are dead, then cross the most successful (longevity-wise)
+//			System.out.println("\nagents left: " + agentsRemaining());
 			while (agentsRemaining() > PROGENITORS) {
-//				System.out.println("agents left: " + agentsRemaining());
+				System.out.println("\nagents left: " + agentsRemaining());
 				
 				//for each node in the grid, check the node for agents
 				for (int i = 0; i < grid.length; i++) {
 					for (int j = 0; j < grid[0].length; j++) {
 						GSEnvironmentNode n = grid[i][j];
+						
+						ArrayList<GSAgent> tempAgents = new ArrayList<GSAgent>();
 						for (GSAgent a : n.agents) {
+							tempAgents.add(a);
+						}
 							
+						for (GSAgent a : tempAgents) {
 							//tell agent its location
 							n.agents.remove(a);
 							a.act(n, grid);
 							
 							//assign to new location
-							grid[a.node.i][a.node.j].agents.add(a);
+							if (a.health > 0) {
+								grid[a.node.i][a.node.j].agents.add(a);
+							}
+							else {
+								System.out.println("agent died with lifespan " + a.lifeSpan);
+							}
+							
 						}
 					}
 				}
 			}
 			
 			//cross agents -- REPLACE WITH BETTER SELECTION ALGORITHM
-			for (int i = 1; i < agents.size(); i++) {
-				for (GSAgent c : agents.get(i).crossWith(agents.get(i - 1))) {
+			ArrayList<GSAgent> progenitors = new ArrayList<GSAgent>();
+			for (int i = 0; i < 10 && i < agents.size(); i++) {
+				progenitors.add(agents.get(i));
+			}
+			
+			for (int i = 1; i < progenitors.size(); i++) {
+				for (GSAgent c : progenitors.get(i).crossWith(progenitors.get(i - 1))) {
 					agents.add(c);
 				}
 			}
@@ -146,10 +177,11 @@ class GeneticSubsumption {
 		}
 		
 		public void act(GSEnvironmentNode n, GSEnvironmentNode[][] grid){
-			System.out.println("act");
+			System.out.println("act() with health: " + health);
 			
 			//if agent is dead, do nothing
 			if (health <= 0) {
+				health = 0;
 				return;
 			}
 			
@@ -199,8 +231,8 @@ class GeneticSubsumption {
 				for (int i = -smellRadius; i <= smellRadius; i++) {
 					for (int j = -smellRadius; j <= smellRadius; j++) {
 						if (n.i + i >= 0 && n.i + i < n.height && n.j + j >= 0 && n.j + j < n.width) {
-							if (grid[i][j].hasFood) {
-								nodeWithFood = grid[i][j];
+							if (grid[n.i + i][n.j + j].hasFood) {
+								nodeWithFood = grid[n.i + i][n.j + j];
 							}
 						}
 					}
@@ -243,7 +275,7 @@ class GeneticSubsumption {
 			
 			//next i
 			if (node.i + yHeading >= 0 && node.i + yHeading < grid.length) {
-				nextY = node.i + nextY;
+				nextY = node.i + yHeading;
 			}
 			
 			//next j
@@ -292,7 +324,28 @@ class GeneticSubsumption {
 			for (GSAGene g : genes) {
 				g.randomize();
 			}
-		}	
+		}
+		
+		public void resetStats(){
+			//value to maximize
+			health = 1;
+			
+			//other health-related stats
+			lifeSpan = 0;
+			
+			//rest
+			cyclesSinceRest = 0;
+			consecutiveRestCycles = 0;
+			fatigue = 0;
+			
+			//food
+			cyclesSinceEating = 0;
+			hunger = 0;
+			
+			//directional stats
+			xHeading = 0;
+			yHeading = 0;		
+		}
 		
 		public String toString(){
 			String str = "health: " + health + "\n";
@@ -347,14 +400,14 @@ class GeneticSubsumption {
 		for (int i = 0; i < h; i++) {
 			for (int j = 0; j < w; j++) {
 				GSEnvironmentNode n = new GSEnvironmentNode(i, j, h, w);
-				if (Math.random() > 0.9) {
+				if (Math.random() > 0.6) {
 					n.hasFood = true;
 				}
 				grid[i][j] = n;
 			}
 		}
 		
-		GeneticSubsumption gs = new GeneticSubsumption(grid, 10);
+		GeneticSubsumption gs = new GeneticSubsumption(grid, 100);
 		gs.run(10);
 		
 	}
