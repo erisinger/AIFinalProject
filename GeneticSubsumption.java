@@ -4,10 +4,13 @@ class GeneticSubsumption {
 	private ArrayList<GSAgent> agents;
 	private GSEnvironmentNode[][] grid;
 	
+	private int gridHeight = 100;
+	private int gridWidth = 100;
+	
 	public GeneticSubsumption(int numAgents){
 		
 		agents = new ArrayList<GSAgent>();
-		generateGrid();
+		generateGrid(gridHeight, gridWidth);
 		
 		int count = numAgents;
 		while (count > 0) {
@@ -18,8 +21,8 @@ class GeneticSubsumption {
 		assignAgentsToNodes();
 	}
 	
-	private void generateGrid(){
-		int h = 100, w = 100;
+	private void generateGrid(int h, int w){
+		
 		GSEnvironmentNode[][] g = new GSEnvironmentNode[h][w];
 		for (int i = 0; i < h; i++) {
 			for (int j = 0; j < w; j++) {
@@ -42,10 +45,10 @@ class GeneticSubsumption {
 		}	
 	}
 	
-	public void run(int cyc){
+	public void run(int epochs){
 		System.out.println("running...");
 		
-		int CYCLES = cyc;
+		int CYCLES = epochs;
 		int PROGENITORS = 0;
 		
 		//run for CYCLES generations
@@ -53,7 +56,7 @@ class GeneticSubsumption {
 			System.out.println("\ncycle " + k);
 			
 			//reset game
-			generateGrid();
+			generateGrid(gridHeight, gridWidth);
 			for (GSAgent a : agents) {
 				a.resetStats();
 			}
@@ -97,9 +100,6 @@ class GeneticSubsumption {
 			Collections.sort(agents);
 			GSAgent victor = agents.get(0);
 			System.out.println("victor: lifespan: " + victor.lifeSpan);
-			
-//			GSAgent loser = agents.get(agents.size() - 1);
-//			System.out.println("loser: lifespan: " + loser.lifeSpan);
 			
 			ArrayList<GSAgent> progenitors = new ArrayList<GSAgent>();
 			for (int i = 0; i < 10 && i < agents.size(); i++) {
@@ -172,8 +172,6 @@ class GeneticSubsumption {
 		//directional stats
 		private int xHeading = 0;
 		private int yHeading = 0;
-//		private int consecutiveDirectionalCycles = 0;
-
 		
 		//chromosome
 		public ArrayList<GSAGene> genes = new ArrayList<GSAGene>();
@@ -235,23 +233,13 @@ class GeneticSubsumption {
 			double healthMultiplier = 0.01;
 			health -= healthMultiplier * (hunger + fatigue);
 			
-			/* now make a choice based on stats and behavioral weights */
-			
-			
-//			//still moving in the same direction?
-//			if (nextX == xHeading && nextY == yHeading) {
-//				if (xHeading != 0 && yHeading != 0) {
-//					consecutiveDirectionalCycles++;
-//				}
-//				else {
-//					consecutiveDirectionalCycles = 0;
-//				}
-//			}
-			
 			//if agent is still alive, move and increment lifespan
 			if (health > 0) {
 				move();
 				lifeSpan++;				
+			}
+			else {
+				health = 0;
 			}
 
 		}
@@ -289,7 +277,7 @@ class GeneticSubsumption {
 				}				
 			}
 
-			//direction of food -- TO DO: should be nearest food...
+			//calculate direction of food
 			if (neighboringNodeWithFood != null) {
 				if (genes.get(APPETITE).weight > Math.random()) {
 					
@@ -323,7 +311,6 @@ class GeneticSubsumption {
 			}
 			
 			/* does wandering, searching, moving toward food or laziness win? */
-			
 			
 			node = grid[nextY][nextX];
 //			System.out.println("moved to " + nextY + ", " + nextX);
@@ -452,25 +439,14 @@ class GeneticSubsumption {
 	}
 	
 	public static void main(String[] args) {
-		//board size
-//		int h = 100, w = 100;
+		int AGENTS = 100;
+		int EPOCHS = 10;
 		
-//		GSEnvironmentNode[][] grid = new GSEnvironmentNode[h][w];
-//		for (int i = 0; i < h; i++) {
-//			for (int j = 0; j < w; j++) {
-//				GSEnvironmentNode n = new GSEnvironmentNode(i, j, h, w);
-//				if (Math.random() < 0.1) {
-//					n.hasFood = true;
-//				}
-//				grid[i][j] = n;
-//			}
-//		}
+		//initialize with AGENTS agents
+		GeneticSubsumption gs = new GeneticSubsumption(AGENTS);
 		
-		//initialize with m agents
-		GeneticSubsumption gs = new GeneticSubsumption(100);
-		
-		//run for n cycles
-		gs.run(10);
+		//run for EPOCHS cycles
+		gs.run(EPOCHS);
 		
 	}
 }
