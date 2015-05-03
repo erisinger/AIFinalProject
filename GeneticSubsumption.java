@@ -61,11 +61,9 @@ class GeneticSubsumption {
 				a.resetStats();
 			}
 			assignAgentsToNodes();
-//			System.out.println(toString());
 			
 			//run until all agents are dead, then cross the most successful (longevity-wise)
 			while (agentsRemaining() > PROGENITORS) {
-//				System.out.println("\nagents left: " + agentsRemaining());
 				
 				//for each node in the grid, check the node for agents
 				for (int i = 0; i < grid.length; i++) {
@@ -86,11 +84,7 @@ class GeneticSubsumption {
 							if (a.health > 0) {
 								grid[a.node.i][a.node.j].agents.add(a);
 							}
-							else {
-//								System.out.println("agent died with lifespan " + a.lifeSpan);
-							}
 							a.node = null;
-							
 						}
 					}
 				}
@@ -104,6 +98,11 @@ class GeneticSubsumption {
 			ArrayList<GSAgent> progenitors = new ArrayList<GSAgent>();
 			for (int i = 0; i < 10 && i < agents.size(); i++) {
 				progenitors.add(agents.get(i));
+			}
+			
+			//cull after sorting and before crossover
+			for (int i = 0; i < PROGENITORS; i++) {
+				agents.remove(agents.size() - 1);
 			}
 			
 			for (int i = 1; i < progenitors.size(); i++) {
@@ -197,7 +196,6 @@ class GeneticSubsumption {
 		}
 		
 		public void act(GSEnvironmentNode n, GSEnvironmentNode[][] grid){
-//			System.out.println("act() with health: " + health);
 			
 			//if agent is dead, do nothing
 			if (health <= 0) {
@@ -248,57 +246,78 @@ class GeneticSubsumption {
 			int nextX = node.j;
 			int nextY = node.i;
 			
-//			if (Math.random() > 0.5) {
-//				xHeading = randomDirection();
-//				yHeading = randomDirection();	
-//			}
-
-			//food detected nearby?
-			GSEnvironmentNode neighboringNodeWithFood = null;
-			int smellRadius = 5;
-			boolean foodInSquare = false;
-
-			if (node.hasFood) {
-				if (genes.get(APPETITE).weight > Math.random()) {
-					node.hasFood = false;
-					cyclesSinceEating = 0;
-					hunger -= (1 - genes.get(METABOLISM).weight);
+			/* does wandering, searching, moving toward food or laziness win? */
+			
+			if (genes.get(APPETITE).weight > genes.get(WANDER).weight && genes.get(APPETITE).weight > genes.get(DIRECTED_SEARCH).weight) {
+				
+				//laziness -- beneficial for rest
+				if (genes.get(LAZINESS).weight > genes.get(APPETITE).weight) {
+					yHeading = node.i;
+					xHeading = node.j;
 				}
-			}
-			else {
-				for (int i = -smellRadius; i <= smellRadius; i++) {
-					for (int j = -smellRadius; j <= smellRadius; j++) {
-						if (node.i + i >= 0 && node.i + i < node.height && node.j + j >= 0 && node.j + j < node.width) {
-							if (grid[node.i + i][node.j + j].hasFood) {
-								neighboringNodeWithFood = grid[node.i + i][node.j + j];
-							}
+				else {
+					//appetite trumps all -- food detected locally or nearby?
+					GSEnvironmentNode neighboringNodeWithFood = null;
+					int smellRadius = 5;
+					boolean foodInSquare = false;
+
+					if (node.hasFood) {
+						if (genes.get(APPETITE).weight > Math.random()) {
+							node.hasFood = false;
+							cyclesSinceEating = 0;
+							hunger -= (1 - genes.get(METABOLISM).weight);
 						}
 					}
-				}				
-			}
+					else {
+						for (int i = -smellRadius; i <= smellRadius; i++) {
+							for (int j = -smellRadius; j <= smellRadius; j++) {
+								if (node.i + i >= 0 && node.i + i < node.height && node.j + j >= 0 && node.j + j < node.width) {
+									if (grid[node.i + i][node.j + j].hasFood) {
+										neighboringNodeWithFood = grid[node.i + i][node.j + j];
+									}
+								}
+							}
+						}				
+					}
 
-			//calculate direction of food
-			if (neighboringNodeWithFood != null) {
-				if (genes.get(APPETITE).weight > Math.random()) {
-					
-					//food vector
-					int foodI = neighboringNodeWithFood.i - node.i;
-					int foodJ = neighboringNodeWithFood.j - node.j;
-					
-					//normalize
-					if (foodI != 0) {
-						foodI = foodI / Math.abs(foodI);
-					}
-					if (foodJ != 0) {
-						foodJ = foodJ / Math.abs(foodJ);
-					}
-					
-					yHeading = foodI;
-					xHeading = foodJ;
-					
-//					System.out.println("changed heading to " + yHeading + ", " + xHeading);
+					//calculate direction of food
+					if (neighboringNodeWithFood != null) {
+						
+						//food vector
+						int foodI = neighboringNodeWithFood.i - node.i;
+						int foodJ = neighboringNodeWithFood.j - node.j;
+						
+						//normalize
+						if (foodI != 0) {
+							foodI = foodI / Math.abs(foodI);
+						}
+						if (foodJ != 0) {
+							foodJ = foodJ / Math.abs(foodJ);
+						}
+						
+						yHeading = foodI;
+						xHeading = foodJ;
+						
+					}					
 				}
 			}
+			
+			//wander and directed search > appetite and laziness
+			else {
+				
+				//hobo -- randomize direction
+				if (genes.get(WANDER).weight > genes.get(DIRECTED_SEARCH).weight) {
+					xHeading = randomDirection();
+					yHeading = randomDirection();
+				}
+				
+				//a linear thinker
+				else {
+					//do nothing -- xHeading, yHeading remain unchanged
+				}
+			}
+			
+			/* check validity of heading, adjust as necessary */
 			
 			//next i
 			if (node.i + yHeading >= 0 && node.i + yHeading < grid.length) {
@@ -308,9 +327,7 @@ class GeneticSubsumption {
 			//next j
 			if (node.j + xHeading >= 0 && node.j + xHeading < grid[0].length) {
 				nextX = node.j + xHeading;
-			}
-			
-			/* does wandering, searching, moving toward food or laziness win? */
+			}			
 			
 			node = grid[nextY][nextX];
 //			System.out.println("moved to " + nextY + ", " + nextX);
@@ -435,12 +452,11 @@ class GeneticSubsumption {
 			height = h;
 			width = w;
 		}
-		
 	}
 	
 	public static void main(String[] args) {
 		int AGENTS = 100;
-		int EPOCHS = 10;
+		int EPOCHS = 1000;
 		
 		//initialize with AGENTS agents
 		GeneticSubsumption gs = new GeneticSubsumption(AGENTS);
