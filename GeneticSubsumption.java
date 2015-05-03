@@ -1,32 +1,37 @@
 import java.util.*;
 class GeneticSubsumption {
 	
-	private ArrayList<GSAgent> agents;
+	private ArrayList<GSAgent> agents = new ArrayList<GSAgent>();
 	private GSEnvironmentNode[][] grid;
+	private int gridHeight;
+	private int gridWidth;
 	
-	private int gridHeight = 100;
-	private int gridWidth = 100;
-	
-	public GeneticSubsumption(int numAgents){
+	public GeneticSubsumption(int h, int w, int numAgents){
+		gridHeight = h;
+		gridWidth = w;
 		
-		agents = new ArrayList<GSAgent>();
+		//set up a new game
 		generateGrid(gridHeight, gridWidth);
-		
-		int count = numAgents;
-		while (count > 0) {
-			agents.add(new GSAgent(8));
-			count--;
-		}				
-		
+		generateAgents(numAgents);
 		assignAgentsToNodes();
 	}
 	
+	private void generateAgents(int numAgents){
+		int count = numAgents;
+		GSAgent a;
+		while (count > 0) {
+			a = new GSAgent(8);
+			a.randomize();
+			agents.add(a);
+			count--;
+		}				
+	}
+	
 	private void generateGrid(int h, int w){
-		
 		GSEnvironmentNode[][] g = new GSEnvironmentNode[h][w];
 		for (int i = 0; i < h; i++) {
 			for (int j = 0; j < w; j++) {
-				GSEnvironmentNode n = new GSEnvironmentNode(i, j, h, w);
+				GSEnvironmentNode n = new GSEnvironmentNode(i, j);
 				if (Math.random() < 0.1) {
 					n.hasFood = true;
 				}
@@ -48,14 +53,14 @@ class GeneticSubsumption {
 	public void run(int epochs){
 		System.out.println("running...");
 		
-		int CYCLES = epochs;
+		//stop when there are PROGENITORS agents remaining -- 0 kills all agents before reproducing
 		int PROGENITORS = 0;
 		
-		//run for CYCLES generations
-		for (int k = 0; k < CYCLES; k++) {
-			System.out.println("\ncycle " + k);
+		//run for specified number of generations
+		for (int k = 0; k < epochs; k++) {
+			System.out.println("\nepoch " + k);
 			
-			//reset game
+			//set/reset game
 			generateGrid(gridHeight, gridWidth);
 			for (GSAgent a : agents) {
 				a.resetStats();
@@ -84,35 +89,44 @@ class GeneticSubsumption {
 							if (a.health > 0) {
 								grid[a.node.i][a.node.j].agents.add(a);
 							}
+							else {
+								//soylent green
+								n.hasFood = true;
+							}
 							a.node = null;
 						}
 					}
 				}
 			}
 			
-			//cross agents
-			Collections.sort(agents);
-			GSAgent victor = agents.get(0);
-			System.out.println("victor: lifespan: " + victor.lifeSpan);
-			
-			ArrayList<GSAgent> progenitors = new ArrayList<GSAgent>();
-			for (int i = 0; i < 10 && i < agents.size(); i++) {
-				progenitors.add(agents.get(i));
-			}
-			
-			//cull after sorting and before crossover
-			for (int i = 0; i < PROGENITORS; i++) {
-				agents.remove(agents.size() - 1);
-			}
-			
-			for (int i = 1; i < progenitors.size(); i++) {
-				for (GSAgent c : progenitors.get(i).crossWith(progenitors.get(i - 1))) {
-					agents.add(c);
-				}
-			}
+			//reproduce using top n agents
+			crossAgents(10);
+
 			//start again...			
 		}
 		System.out.println("run complete");
+	}
+	
+	private void crossAgents(int numParents){
+		Collections.sort(agents);
+		GSAgent victor = agents.get(0);
+		System.out.println("victor: lifespan: " + victor.lifeSpan);
+		
+		ArrayList<GSAgent> progenitors = new ArrayList<GSAgent>();
+		for (int i = 0; i < numParents && i < agents.size(); i++) {
+			progenitors.add(agents.get(i));
+		}
+		
+		//cull after sorting and before crossover
+		for (int i = 0; i < numParents; i++) {
+			agents.remove(agents.size() - 1);
+		}
+		
+		for (int i = 1; i < progenitors.size(); i++) {
+			for (GSAgent c : progenitors.get(i).crossWith(progenitors.get(i - 1))) {
+				agents.add(c);
+			}
+		}		
 	}
 	
 	private int agentsRemaining(){
@@ -129,7 +143,7 @@ class GeneticSubsumption {
 		String str = "";
 		for (int i = 0; i < grid.length; i++) {
 			for (int j = 0; j < grid[0].length; j++) {
-				str += " " + grid[i][j].agents.size() + ":" + (grid[i][j].hasFood ? "x" : "o");
+				str += grid[i][j].agents.size();
 			}
 			str += "\n";
 		}
@@ -239,7 +253,6 @@ class GeneticSubsumption {
 			else {
 				health = 0;
 			}
-
 		}
 		
 		private void move(){
@@ -247,8 +260,10 @@ class GeneticSubsumption {
 			int nextY = node.i;
 			
 			/* does wandering, searching, moving toward food or laziness win? */
-			
-			if (genes.get(APPETITE).weight > genes.get(WANDER).weight && genes.get(APPETITE).weight > genes.get(DIRECTED_SEARCH).weight) {
+			double appetiteWeight = genes.get(APPETITE).weight;
+			double wanderWeight = genes.get(WANDER).weight;
+			double searchWeight = genes.get(DIRECTED_SEARCH).weight;
+			if (appetiteWeight > wanderWeight && appetiteWeight > searchWeight) {
 				
 				//laziness -- beneficial for rest
 				if (genes.get(LAZINESS).weight > genes.get(APPETITE).weight) {
@@ -260,18 +275,19 @@ class GeneticSubsumption {
 					GSEnvironmentNode neighboringNodeWithFood = null;
 					int smellRadius = 5;
 					boolean foodInSquare = false;
-
+					
+					//current node has food
 					if (node.hasFood) {
-						if (genes.get(APPETITE).weight > Math.random()) {
-							node.hasFood = false;
-							cyclesSinceEating = 0;
-							hunger -= (1 - genes.get(METABOLISM).weight);
-						}
+						node.hasFood = false;
+						cyclesSinceEating = 0;
+						hunger -= (1 - genes.get(METABOLISM).weight);
 					}
+					
+					//no food locally -- check neighbors within scent range
 					else {
 						for (int i = -smellRadius; i <= smellRadius; i++) {
 							for (int j = -smellRadius; j <= smellRadius; j++) {
-								if (node.i + i >= 0 && node.i + i < node.height && node.j + j >= 0 && node.j + j < node.width) {
+								if (isSafeNode(node.i + i, node.j + j)) {
 									if (grid[node.i + i][node.j + j].hasFood) {
 										neighboringNodeWithFood = grid[node.i + i][node.j + j];
 									}
@@ -289,15 +305,11 @@ class GeneticSubsumption {
 						
 						//normalize
 						if (foodI != 0) {
-							foodI = foodI / Math.abs(foodI);
+							yHeading = foodI / Math.abs(foodI);
 						}
 						if (foodJ != 0) {
-							foodJ = foodJ / Math.abs(foodJ);
+							xHeading = foodJ / Math.abs(foodJ);
 						}
-						
-						yHeading = foodI;
-						xHeading = foodJ;
-						
 					}					
 				}
 			}
@@ -313,25 +325,29 @@ class GeneticSubsumption {
 				
 				//a linear thinker
 				else {
-					//do nothing -- xHeading, yHeading remain unchanged
+					//do nothing -- xHeading, yHeading remain unchanged from last cycle
 				}
 			}
 			
-			/* check validity of heading, adjust as necessary */
-			
-			//next i
-			if (node.i + yHeading >= 0 && node.i + yHeading < grid.length) {
-				nextY = node.i + yHeading;
-			}
-			
-			//next j
-			if (node.j + xHeading >= 0 && node.j + xHeading < grid[0].length) {
-				nextX = node.j + xHeading;
-			}			
-			
-			node = grid[nextY][nextX];
-//			System.out.println("moved to " + nextY + ", " + nextX);
-
+			//check validity of destination, adjust as necessary
+			nextY = safeI(node.i + yHeading);
+			nextX = safeJ(node.j + xHeading);
+		}
+		
+		private boolean isSafeNode(int i, int j){
+			return i >= 0 && i < gridHeight && j >= 0 && j < gridWidth;
+		}
+		
+		private int safeI(int i){
+			if (i < 0) return 0;
+			if (i > gridHeight - 1) return gridHeight - 1;
+			return i;
+		}
+		
+		private int safeJ(int j){
+			if (j < 0) return 0;
+			if (j > gridHeight - 1) return gridHeight - 1;
+			return j;
 		}
 		
 		private int randomDirection(){
@@ -357,7 +373,7 @@ class GeneticSubsumption {
 			}
 			
 			//mutation
-			double mutationProbability = 0.2;
+			double mutationProbability = 0.1;
 			for (GSAGene g : c1.genes) {
 				if (Math.random() < mutationProbability) {
 					g.weight = Math.random();
@@ -370,7 +386,6 @@ class GeneticSubsumption {
 				}
 			}
 
-			
 			//add offspring to population
 			ArrayList<GSAgent> children = new ArrayList<GSAgent>();
 			children.add(c1);
@@ -394,7 +409,7 @@ class GeneticSubsumption {
 			cyclesSinceEating = 0;
 			hunger = 0;
 			xHeading = 0;
-			yHeading = 0;		
+			yHeading = 0;
 		}
 		
 		public String toString(){
@@ -440,26 +455,23 @@ class GeneticSubsumption {
 	}
 	
 	public static class GSEnvironmentNode{
-		public boolean hasFood = false;
 		public ArrayList<GSAgent> agents = new ArrayList<GSAgent>();
+		public boolean hasFood = false;
 		public int i;
 		public int j;
-		public int height, width;
 		
-		public GSEnvironmentNode(int m, int n, int h, int w){
+		public GSEnvironmentNode(int m, int n){
 			i = m;
 			j = n;
-			height = h;
-			width = w;
 		}
 	}
 	
 	public static void main(String[] args) {
 		int AGENTS = 100;
-		int EPOCHS = 1000;
+		int EPOCHS = 100;
 		
 		//initialize with AGENTS agents
-		GeneticSubsumption gs = new GeneticSubsumption(AGENTS);
+		GeneticSubsumption gs = new GeneticSubsumption(100, 100, AGENTS);
 		
 		//run for EPOCHS cycles
 		gs.run(EPOCHS);
