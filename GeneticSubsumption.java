@@ -228,11 +228,17 @@ class GeneticSubsumption {
 			
 			//update fatigue
 			if (xHeading == 0 && yHeading == 0) {
-				//agent didn't move last cycle
+				//agent hasn't moved since last cycle
 				cyclesSinceRest = 0;
+				
+				//cap consecutive rest cycles at 10
+				consecutiveRestCycles++;
+				consecutiveRestCycles = consecutiveRestCycles > 10 ? 10 : consecutiveRestCycles + 1;
 				fatigue -= genes.get(RECOVERY_RATE).weight * consecutiveRestCycles;
 			}
 			else {
+				//agent moved -- no rest
+				consecutiveRestCycles = 0;
 				cyclesSinceRest++;
 				fatigue += (1 - genes.get(ENDURANCE).weight) * cyclesSinceRest;
 			}
