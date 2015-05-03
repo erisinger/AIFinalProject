@@ -4,10 +4,10 @@ class GeneticSubsumption {
 	private ArrayList<GSAgent> agents;
 	private GSEnvironmentNode[][] grid;
 	
-	public GeneticSubsumption(GSEnvironmentNode[][] g, int numAgents){
+	public GeneticSubsumption(int numAgents){
 		
 		agents = new ArrayList<GSAgent>();
-		grid = g;
+		generateGrid();
 		
 		int count = numAgents;
 		while (count > 0) {
@@ -16,6 +16,21 @@ class GeneticSubsumption {
 		}				
 		
 		assignAgentsToNodes();
+	}
+	
+	private void generateGrid(){
+		int h = 100, w = 100;
+		GSEnvironmentNode[][] g = new GSEnvironmentNode[h][w];
+		for (int i = 0; i < h; i++) {
+			for (int j = 0; j < w; j++) {
+				GSEnvironmentNode n = new GSEnvironmentNode(i, j, h, w);
+				if (Math.random() < 0.1) {
+					n.hasFood = true;
+				}
+				g[i][j] = n;
+			}
+		}	
+		this.grid = g;	
 	}
 	
 	private void assignAgentsToNodes(){
@@ -38,6 +53,7 @@ class GeneticSubsumption {
 			System.out.println("\ncycle " + k);
 			
 			//reset game
+			generateGrid();
 			for (GSAgent a : agents) {
 				a.resetStats();
 			}
@@ -70,18 +86,20 @@ class GeneticSubsumption {
 							else {
 //								System.out.println("agent died with lifespan " + a.lifeSpan);
 							}
+							a.node = null;
 							
 						}
 					}
 				}
 			}
 			
-			//cross agents -- REPLACE WITH BETTER SELECTION ALGORITHM
+			//cross agents
 			Collections.sort(agents);
 			GSAgent victor = agents.get(0);
-			GSAgent loser = agents.get(agents.size() - 1);
 			System.out.println("victor: lifespan: " + victor.lifeSpan);
-			System.out.println("loser: lifespan: " + loser.lifeSpan);
+			
+//			GSAgent loser = agents.get(agents.size() - 1);
+//			System.out.println("loser: lifespan: " + loser.lifeSpan);
 			
 			ArrayList<GSAgent> progenitors = new ArrayList<GSAgent>();
 			for (int i = 0; i < 10 && i < agents.size(); i++) {
@@ -384,10 +402,10 @@ class GeneticSubsumption {
 		}	
 		
 		public int compareTo(GSAgent o){
-			if (lifeSpan > o.lifeSpan) {
+			if (this.lifeSpan > o.lifeSpan) {
 				return -1;
 			}
-			else if (lifeSpan < o.lifeSpan) {
+			else if (this.lifeSpan < o.lifeSpan) {
 				return 1;
 			}
 			else {
@@ -435,21 +453,21 @@ class GeneticSubsumption {
 	
 	public static void main(String[] args) {
 		//board size
-		int h = 100, w = 100;
+//		int h = 100, w = 100;
 		
-		GSEnvironmentNode[][] grid = new GSEnvironmentNode[h][w];
-		for (int i = 0; i < h; i++) {
-			for (int j = 0; j < w; j++) {
-				GSEnvironmentNode n = new GSEnvironmentNode(i, j, h, w);
-				if (Math.random() < 0.1) {
-					n.hasFood = true;
-				}
-				grid[i][j] = n;
-			}
-		}
+//		GSEnvironmentNode[][] grid = new GSEnvironmentNode[h][w];
+//		for (int i = 0; i < h; i++) {
+//			for (int j = 0; j < w; j++) {
+//				GSEnvironmentNode n = new GSEnvironmentNode(i, j, h, w);
+//				if (Math.random() < 0.1) {
+//					n.hasFood = true;
+//				}
+//				grid[i][j] = n;
+//			}
+//		}
 		
 		//initialize with m agents
-		GeneticSubsumption gs = new GeneticSubsumption(grid, 100);
+		GeneticSubsumption gs = new GeneticSubsumption(100);
 		
 		//run for n cycles
 		gs.run(10);
