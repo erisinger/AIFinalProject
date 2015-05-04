@@ -158,14 +158,14 @@ class GeneticSubsumption {
 	public class GSAgent implements Comparable<GSAgent>{
 		
 		//gene weights
-		private int	WANDER = 0;				//probability of undirected movement
+		private int	WANDER = 0;		//probability of undirected movement
 		private int	DIRECTED_SEARCH = 1;	//probability of directed movement
-		private int	LAZINESS = 2;			//probability of no movement
-		private int	ENDURANCE = 3;			//ability to go without rest
-		private int	SENSE_OF_SMELL = 4;		//probability of detecting food in neighboring squares
-		private int	APPETITE = 5;			//probability of moving toward food once detected
-		private int	METABOLISM = 6;			//frequency of eating required to maintain health
-		private int	RECOVERY_RATE = 7;		//amount of rest required to recover
+		private int	LAZINESS = 2;		//probability of no movement
+		private int	ENDURANCE = 3;		//ability to go without rest
+		private int	SENSE_OF_SMELL = 4;	//probability of detecting food in neighboring squares
+		private int	APPETITE = 5;		//probability of moving toward food once detected
+		private int	METABOLISM = 6;		//frequency of eating required to maintain health
+		private int	RECOVERY_RATE = 7;	//amount of rest required to recover
 		
 		//value to maximize
 		public double health = 1;
