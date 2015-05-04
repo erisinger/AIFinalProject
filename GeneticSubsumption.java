@@ -51,14 +51,15 @@ class GeneticSubsumption {
 	}
 	
 	public void run(int epochs){
-		System.out.println("running...");
+
+//		System.out.println("running...");
 		
 		//stop when there are PROGENITORS agents remaining -- 0 kills all agents before reproducing
 		int PROGENITORS = 0;
 		
 		//run for specified number of generations
 		for (int k = 0; k < epochs; k++) {
-			System.out.println("\nepoch " + k);
+//			System.out.println("\nepoch " + k);
 			
 			//set/reset game
 			generateGrid(gridHeight, gridWidth);
@@ -98,19 +99,19 @@ class GeneticSubsumption {
 					}
 				}
 			}
-			
+				
 			//reproduce using top n agents
 			crossAgents(10);
 
 			//start again...			
 		}
-		System.out.println("run complete");
+//		System.out.println("run complete");
 	}
 	
 	private void crossAgents(int numParents){
 		Collections.sort(agents);
 		GSAgent victor = agents.get(0);
-		System.out.println("victor: lifespan: " + victor.lifeSpan);
+		System.out.println(victor.toString());
 		
 		ArrayList<GSAgent> progenitors = new ArrayList<GSAgent>();
 		for (int i = 0; i < numParents && i < agents.size(); i++) {
@@ -147,7 +148,6 @@ class GeneticSubsumption {
 			}
 			str += "\n";
 		}
-		str += "\n";
 		
 		return str;
 	}
@@ -419,10 +419,11 @@ class GeneticSubsumption {
 		}
 		
 		public String toString(){
-			String str = "health: " + health + "\n";
+			String str = "" + lifeSpan;
 			for (GSAGene g : genes) {
-				str += g.name + ": " + g.weight + "\n";
-			}	
+				str += g.weight + ",";
+			}
+			str += "0";
 			return str;
 		}	
 		
@@ -457,6 +458,7 @@ class GeneticSubsumption {
 		
 		public void randomize(){
 			weight = Math.random();
+//			System.out.println("" + weight);
 		}
 	}
 	
@@ -474,7 +476,7 @@ class GeneticSubsumption {
 	
 	public static void main(String[] args) {
 		int AGENTS = 100;
-		int EPOCHS = 100;
+		int EPOCHS = 500;
 		
 		//initialize with AGENTS agents
 		GeneticSubsumption gs = new GeneticSubsumption(100, 100, AGENTS);
