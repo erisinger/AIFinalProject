@@ -52,14 +52,14 @@ class GeneticSubsumption {
 	
 	public void run(int epochs){
 
-//		System.out.println("running...");
+		System.out.println("running...");
 		
 		//stop when there are PROGENITORS agents remaining -- 0 kills all agents before reproducing
 		int PROGENITORS = 0;
 		
 		//run for specified number of generations
 		for (int k = 0; k < epochs; k++) {
-//			System.out.println("\nepoch " + k);
+			System.out.println("\nepoch " + k);
 			
 			//set/reset game
 			generateGrid(gridHeight, gridWidth);
@@ -105,7 +105,7 @@ class GeneticSubsumption {
 
 			//start again...			
 		}
-//		System.out.println("run complete");
+		System.out.println("run complete");
 	}
 	
 	private void crossAgents(int numParents){
